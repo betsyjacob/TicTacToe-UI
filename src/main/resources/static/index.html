@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html ng-app="ngTictactoeApp">
+<head>
+<title>TicTacToe 2.0</title>
+<style type="text/css">
+table {
+	margin: 10px;
+	border: graytext 1px solid;
+	background-color: #14bdac;
+}
+
+td {
+	border: grey 1px solid;
+	width: 50px;
+	height: 50px;
+	text-align: center;
+	font-size: 20px;
+	font-weight: bolder;
+}
+
+.winning {
+	background-color: white;
+	color: grey;
+	font-weight: bold;
+}
+
+p {
+	font-size: 25px;
+	color: grey;
+	font-weight: bold;
+}
+</style>
+</head>
+<body ng-controller="BoardController">
+	<p ng-show="board.won" ng-cloak>Player - {{board.winner}} won the game!</p>
+	<table>
+		<tr ng-repeat="row in board.grid">
+			<td ng-repeat="cell in row" ng-click="board.play(cell)"
+				ng-class="{'winning': cell.winning}"><span ng-bind="cell.value"></span></td>
+		</tr>
+	</table>
+	<button ng-click="board.reset()">Restart</button>
+	<script type="text/javascript"
+		src="https://ajax.googleapis.com/ajax/libs/angularjs/1.0.7/angular.js"></script>
+</body>
+<script type="text/javascript">
+	var app = angular.module('ngTictactoeApp', [ 'ng' ]);
+
+	(function() {
+		var Board = (function() {
+			var boardsize, player1, player2, computer, players, Cell;
+
+			boardsize = 4;
+			player1 = 'X';
+			player2 = 'O';
+			computer = '#';
+			players = [ player1, player2, computer ];
+
+			Cell = (function() {
+				function Cell(value) {
+					this.value = value;
+					this.winning = false;
+				}
+				Cell.prototype.mark = function(value) {
+					this.value = value;
+				}
+				Cell.prototype.hasBeenPlayed = function() {
+					return this.value != '';
+				}
+				return Cell;
+			})();
+
+			Board.prototype.play = function(cell) {
+				if (this.isGameOver) {
+					return;
+				}
+				if (cell.hasBeenPlayed()) {
+					return;
+				}
+				cell.mark(players[this.currentPlayer]);
+				this.checkWinner();
+				this.switchPlayer();
+			};
+
+			Board.prototype.checkWinner = function() {
+				var rowIndex = 0;
+				var columnIndex = 0;
+
+				for (rowIndex = 0; rowIndex < boardsize; rowIndex++) {
+					this.checkCombination("row", rowIndex);
+				}
+				for (columnIndex = 0; columnIndex < boardsize; columnIndex++) {
+					this.checkCombination("column", columnIndex);
+				}
+				this.checkCombination("A", -1);
+				this.checkCombination("B", -1);
+			};
+
+			Board.prototype.checkCombination = function(type, index) {
+				var cntPlayer1 = 0;
+				var cntPlayer2 = 0;
+				var cntComputer = 0;
+				for (var i = 0; i < boardsize; i++) {
+					var cell = "";
+					if (type == "row")
+						cell = this.grid[index][i];
+					else if (type == "column")
+						cell = this.grid[i][index];
+					else if (type == "A")
+						cell = this.grid[i][i];
+					else
+						cell = this.grid[i][boardsize - i - 1];
+
+					var cellMarker = cell.value;
+					if (cellMarker == '') {
+						return false;
+					}
+					if (cellMarker == player1) {
+						cntPlayer1++;
+					} else if (cellMarker == player2) {
+						cntPlayer2++;
+					} else if (cellMarker == computer) {
+						cntComputer++;
+					}
+				}
+
+				var val;
+
+				if (cntPlayer1 == boardsize) {
+					val = 1;
+				} else if (cntPlayer2 == boardsize) {
+					val = 2;
+				} else if (cntComputer == boardsize) {
+					val = 'Computer';
+				}
+
+				if (val) {
+					this.setWinner(val);
+					this.markWinner(type, index);
+				}
+
+			};
+
+			function Board() {
+				this.reset();
+			}
+
+			Board.prototype.reset = function() {
+				this.currentPlayer = 0;
+				this.grid = [];
+				this.won = false;
+				this.isGameOver = false;
+				for (var i = 0; i < boardsize; i++) {
+					var row = [];
+					for (var j = 0; j < boardsize; j++) {
+						row.push(new Cell(''));
+					}
+					this.grid.push(row);
+				}
+				return this.grid;
+			};
+
+			Board.prototype.setWinner = function(value) {
+				this.won = true;
+				this.winner = value;
+				this.isGameOver = true;
+			};
+
+			Board.prototype.markWinner = function(type, index) {
+				for (var i = 0; i < boardsize; i++) {
+					if (type == "row")
+						cell = this.grid[index][i].winning = true;
+					else if (type == "column")
+						cell = this.grid[i][index].winning = true;
+					else if (type == "A")
+						cell = this.grid[i][i].winning = true;
+					else
+						cell = this.grid[i][boardsize - i - 1].winning = true;
+				}
+			}
+
+			Board.prototype.switchPlayer = function() {
+				if (this.currentPlayer < 2)
+					this.currentPlayer = this.currentPlayer + 1;
+				else
+					this.currentPlayer = 0;
+			}
+			return Board;
+		})();
+
+		angular.module('ngTictactoeApp').factory('Board', function() {
+			return Board;
+		});
+
+	}).call(this);
+
+	app.controller('BoardController', function($scope, Board) {
+		$scope.board = new Board;
+	});
+</script>
+</html>
